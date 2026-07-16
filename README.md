@@ -1,61 +1,86 @@
 <div align="center">
 
-# HoodOptions
+![HoodOptions](docs/assets/banner.png)
 
-**The options layer for tokenized stocks on Robinhood Chain.**
+### The options layer for tokenized stocks on Robinhood Chain
 
-Max loss = premium. No liquidations. USDG in, USDG out.
+**Max loss = premium. No liquidations. USDG in, USDG out.**
 
-[**hoodoptions.xyz**](https://hoodoptions.xyz) · [Docs](https://hoodoptions.xyz/docs) · [Trade](https://hoodoptions.xyz/trade) · [Earn](https://hoodoptions.xyz/earn)
+[**→ hoodoptions.xyz**](https://hoodoptions.xyz)
 
-![chain](https://img.shields.io/badge/chain-Robinhood%20(4663)-c4a574)
-![status](https://img.shields.io/badge/venue-live-3ddc97)
-![stack](https://img.shields.io/badge/stack-Next.js%2015%20·%20wagmi%20·%20Foundry-12141a)
+[Trade](https://hoodoptions.xyz/trade) · [Earn](https://hoodoptions.xyz/earn) · [Board](https://hoodoptions.xyz/board) · [Docs](https://hoodoptions.xyz/docs) · [API](https://hoodoptions.xyz/api/health)
+
+![chain](https://img.shields.io/badge/chain-Robinhood%204663-c4a574?style=for-the-badge)
+![venue](https://img.shields.io/badge/venue-LIVE-3ddc97?style=for-the-badge)
+![prices](https://img.shields.io/badge/market%20data-real--time-c4a574?style=for-the-badge)
 
 </div>
 
 ---
 
-## What it is
+## Why this exists
 
-Robinhood Chain put stocks on-chain. Nobody built the derivatives layer. HoodOptions is that layer:
+Robinhood Chain put **stocks on-chain** — NVDA, TSLA, even private-market RWAs like SpaceX. What it doesn't have is a derivatives layer. Every serious market grows one; on Robinhood Chain, HoodOptions is it.
 
-- **UP / DOWN options** on tokenized stocks and RWAs (NVDA, TSLA, SPCX, …) with 2–10× payoff bands
-- **Defined risk, always** — a trader's maximum loss is the premium paid, enforced by design. No margin, no liquidation engine, no funding rates
-- **USDG vault** — LPs deposit USDG, collectively write every option, and earn the premium flow. ERC4626-style shares, 80% utilization cap
-- **Real market data** — live quotes feed pricing and settlement
+Perps liquidate people on wicks. We don't. Every position on HoodOptions is a **defined-risk option**: the trader pays a premium, and that premium is the absolute maximum they can lose. Structurally — not because a liquidation engine was merciful.
 
-## Architecture
+![Payoff](docs/assets/payoff.png)
 
-```mermaid
-flowchart LR
-    T[Trader wallet] -->|premium USDG| E[Options Engine]
-    E -->|reserve collateral| V[USDG Vault]
-    LP[LP wallet] -->|deposit / withdraw| V
-    O[Price oracle] -->|settlement px| E
-    E -->|payout if ITM| T
+## How the money flows
+
+Traders pay premiums into a shared **USDG vault**. LPs own the vault and collectively act as the counterparty to every option written. Premiums are LP yield; collateral for worst-case payouts is reserved at write time and capped at 80% utilization so LP withdrawals always stay honest.
+
+![Architecture](docs/assets/architecture.png)
+
+## The venue, live
+
+<div align="center">
+
+![Venue](docs/assets/hero.png)
+
+</div>
+
+| | |
+|---|---|
+| **UP / DOWN options** | 2–10× payoff bands on NVDA, TSLA, SPCX, AMD, AAPL, META, AMZN, PLTR |
+| **Real market data** | Live quotes drive pricing and settlement, 30s refresh |
+| **Wallet-native** | Connect on Robinhood Chain (4663 / testnet 46630), account follows the wallet |
+| **USDG vault** | ERC4626-style shares, live share price, APY from premium flow |
+| **Options board** | Deribit-style strike × expiry matrix |
+| **Points + leaderboard** | Every trade and deposit earns points — future incentive allocation |
+
+## Stack
+
+```text
+app/         Next.js 15 · Tailwind · Framer Motion · lightweight-charts
+wallets/     wagmi · viem — Robinhood Chain mainnet + testnet
+state/       shared venue engine, wallet-keyed accounts, live price feed
+contracts/   Foundry — HoodVault.sol · HoodOptionsEngine.sol · USDGMock.sol
 ```
 
-| Layer | Today | Next |
-|---|---|---|
-| Venue (UI, vault, positions, points) | Live at hoodoptions.xyz | — |
-| Wallets | Robinhood Chain via wagmi/viem | Robinhood Wallet deep link |
-| Prices | Live market feed, 30s refresh | Chainlink adapter |
-| Settlement | Server engine (auditable ledger) | `HoodOptionsEngine.sol` on-chain |
-| Contracts | Written, deploy-ready (`contracts/`) | Testnet → audit → mainnet |
+```mermaid
+sequenceDiagram
+    participant T as Trader
+    participant E as Engine
+    participant V as USDG Vault
+    participant O as Oracle
+    T->>E: open(UP, 5x, 24h) + premium
+    E->>V: reserve worst-case payout
+    O-->>E: settlement price @ expiry
+    alt in the money
+        V->>T: payout (up to 10x)
+    else expired worthless
+        Note over V: premium stays with LPs
+    end
+```
 
 ## Run it
 
 ```bash
-npm install
-npm run dev          # http://localhost:3000
+npm install && npm run dev     # http://localhost:3000
 ```
 
-Production build: `npm run build && npm start`. Deploys to Vercel out of the box.
-
-## Contracts
-
-Foundry project in [`contracts/`](contracts/): `HoodVault.sol` (USDG liquidity vault), `HoodOptionsEngine.sol` (defined-risk options, oracle settlement), `USDGMock.sol` (testnet only).
+Deploy contracts to Robinhood testnet:
 
 ```bash
 cd contracts
@@ -63,7 +88,17 @@ forge script script/Deploy.s.sol --rpc-url robinhood_testnet \
   --private-key $DEPLOYER_KEY --broadcast
 ```
 
-Networks: mainnet `4663` · testnet `46630` · explorer [robinhoodchain.blockscout.com](https://robinhoodchain.blockscout.com)
+## Status — honest by design
+
+| Layer | Today | Next |
+|---|---|---|
+| Venue (UI, vault, positions, points) | **Live** at hoodoptions.xyz | — |
+| Wallets | **Live** — Robinhood Chain via wagmi | Robinhood Wallet deep link |
+| Market data | **Live** — real quotes | Chainlink adapter |
+| Settlement | Server engine, auditable ledger | `HoodOptionsEngine.sol` on-chain |
+| Contracts | Written, deploy-ready | Testnet → audit → mainnet |
+
+**Mainnet gate:** independent audit · Chainlink-compatible oracle · multisig + timelock on admin · canonical USDG.
 
 ## API
 
@@ -75,14 +110,10 @@ Networks: mainnet `4663` · testnet `46630` · explorer [robinhoodchain.blocksco
 | `POST /api/trade` · `/deposit` · `/withdraw` · `/claim` | Trading + LP actions |
 | `POST /api/wallet` | Bind a connected wallet to the session |
 
-## Security model
+---
 
-- Trader downside is hard-capped at premium — structurally, not by liquidation
-- Vault utilization capped at 80% so LP exits stay honest
-- Mainnet gate: independent audit, Chainlink-compatible oracle, multisig + timelock on admin
+<div align="center">
 
-## Roadmap
+**[hoodoptions.xyz](https://hoodoptions.xyz)** — options on the stocks that just moved on-chain.
 
-1. **Now** — live venue, real prices, wallet-native accounts
-2. **Testnet** — contracts deployed, HOOD incentive claims for test users
-3. **Mainnet** — audited contracts, canonical USDG, RWA market expansion (private-market tokens, ETFs)
+</div>
