@@ -1,26 +1,124 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #0b0c0e;
+  --surface: #12141a;
+  --surface-2: #181b24;
+  --border: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --text: #f2ede4;
+  --muted: rgba(242, 237, 228, 0.55);
+  --copper: #c4a574;
+  --copper-dim: rgba(196, 165, 116, 0.18);
+  --up: #3ddc97;
+  --down: #e85d4c;
+  --font-display: var(--font-newsreader);
+  --font-mono: var(--font-plex);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-copper: var(--copper);
+  --color-copper-dim: var(--copper-dim);
+  --color-up: var(--up);
+  --color-down: var(--down);
+  --font-sans: var(--font-newsreader);
+  --font-mono: var(--font-plex);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-newsreader), "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-mono,
+.num {
+  font-family: var(--font-plex), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: var(--copper-dim);
+  color: var(--text);
+}
+
+.hairline {
+  border-color: var(--border);
+}
+
+.ticker-track {
+  animation: ticker 48s linear infinite;
+}
+
+@keyframes ticker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes tick-flash {
+  0% {
+    color: var(--copper);
+  }
+  100% {
+    color: inherit;
+  }
+}
+
+.tick-flash {
+  animation: tick-flash 180ms ease-out;
+}
+
+.price-lattice {
+  background-image:
+    linear-gradient(rgba(196, 165, 116, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(196, 165, 116, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 20%, transparent 75%);
+}
+
+html.has-forge-cursor,
+html.has-forge-cursor body,
+html.has-forge-cursor a,
+html.has-forge-cursor button {
+  cursor: none !important;
+}
+
+@media (pointer: coarse) {
+  html.has-forge-cursor,
+  html.has-forge-cursor body,
+  html.has-forge-cursor a,
+  html.has-forge-cursor button {
+    cursor: auto !important;
+  }
+}
+
+html.forge-intro-lock,
+html.forge-intro-lock body {
+  overflow: hidden !important;
 }
