@@ -36,6 +36,10 @@ yarn-error.log*
 # live venue state
 .data/
 
+# foundry build artifacts
+contracts/out/
+contracts/cache/
+
 # vercel
 .vercel
 
