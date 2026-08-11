@@ -16,6 +16,7 @@ import {
   marketSymbolById,
 } from "@/lib/chain/contracts";
 import { robinhoodChain } from "@/lib/chain/wagmi";
+import { txErrorToast, txSuccessToast } from "@/lib/txToast";
 
 const engineContract = {
   address: hoodContracts.engine,
@@ -141,11 +142,17 @@ export function OnchainPositions() {
       });
       await publicClient.waitForTransactionReceipt({ hash });
       setStatus("Position settled on-chain. Payouts land directly in your wallet.");
+      txSuccessToast(
+        "Position settled",
+        hash,
+        "Any payout landed directly in your wallet"
+      );
       await ids.refetch();
       await positionReads.refetch();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Settlement failed";
       setStatus(message.length > 140 ? `${message.slice(0, 137)}…` : message);
+      txErrorToast(message);
     } finally {
       setSettling(null);
     }

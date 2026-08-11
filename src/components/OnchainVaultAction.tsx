@@ -15,6 +15,7 @@ import {
   vaultAbi,
 } from "@/lib/chain/contracts";
 import { robinhoodChain } from "@/lib/chain/wagmi";
+import { txErrorToast, txSuccessToast } from "@/lib/txToast";
 
 type Props = {
   mode: "deposit" | "withdraw";
@@ -104,6 +105,7 @@ export function OnchainVaultAction({ mode, amount, onStatus }: Props) {
         });
         await client.waitForTransactionReceipt({ hash });
         onStatus("USDG deposited. You are now earning premiums.");
+        txSuccessToast("Deposit confirmed", hash, "You are now earning premiums");
       } else {
         const vaultAssets = totalAssets.data ?? 0n;
         const shares = totalShares.data ?? 0n;
@@ -121,6 +123,7 @@ export function OnchainVaultAction({ mode, amount, onStatus }: Props) {
         });
         await client.waitForTransactionReceipt({ hash });
         onStatus("USDG withdrawn to your wallet.");
+        txSuccessToast("Withdrawal confirmed", hash, "USDG returned to your wallet");
       }
       await allowance.refetch();
       await totalAssets.refetch();
@@ -129,6 +132,7 @@ export function OnchainVaultAction({ mode, amount, onStatus }: Props) {
       const message =
         error instanceof Error ? error.message : "Transaction failed";
       onStatus(message.length > 140 ? `${message.slice(0, 137)}…` : message);
+      txErrorToast(message);
     } finally {
       setBusy(false);
     }

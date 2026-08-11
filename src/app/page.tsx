@@ -1,10 +1,41 @@
 "use client";
 
 import Link from "next/link";
-import { LogoMark } from "@/components/Brand";
 import { HomeHero } from "@/components/motion/HomeHero";
 import { Reveal } from "@/components/motion/Reveal";
 import { motion } from "framer-motion";
+
+const PARAMS = [
+  { v: "7", k: "TOKENIZED-STOCK MARKETS" },
+  { v: "80%", k: "MAX POOL UTILIZATION" },
+  { v: "100%", k: "PAYOUT COLLATERALIZED AT OPEN" },
+  { v: "3%", k: "FEE — WINNING PAYOUTS ONLY" },
+];
+
+const STEPS = [
+  {
+    n: "01",
+    t: "Pick the move",
+    b: "Market, direction, leverage, expiry. The strike and premium are computed by the engine contract — no order book games, no slippage.",
+  },
+  {
+    n: "02",
+    t: "Premium is the whole risk",
+    b: "Pay the premium in USDG. That number is the most you can ever lose. No margin calls, no funding, no liquidation price to babysit.",
+  },
+  {
+    n: "03",
+    t: "Settle on-chain",
+    b: "At expiry the oracle print decides. Winning payouts are already reserved in the vault and land straight in your wallet.",
+  },
+];
+
+const GUARANTEES = [
+  ["Hard deposit cap", "The pilot pool has a contract-enforced ceiling. Small by design while the venue earns trust."],
+  ["Collateral reserved up front", "A position cannot open unless the vault locks its full max payout first. No IOUs."],
+  ["Fresh prices or no trade", "Opens are blocked if the oracle print is older than 45 minutes — nobody trades against a stale tape."],
+  ["Exits are never pausable", "The pause switch stops new risk. Withdrawals and settlements cannot be frozen by anyone, including us."],
+];
 
 export default function HomePage() {
   return (
@@ -43,6 +74,43 @@ export default function HomePage() {
               </motion.div>
             </Reveal>
           ))}
+        </div>
+      </section>
+
+      <section className="border-t border-border bg-surface/30">
+        <div className="mx-auto max-w-[1400px] px-4 md:px-6 py-10 grid grid-cols-2 lg:grid-cols-4 gap-y-8">
+          {PARAMS.map((p, i) => (
+            <Reveal key={p.k} delay={i * 0.08}>
+              <div className={i > 0 ? "lg:border-l lg:border-border lg:pl-8" : ""}>
+                <div className="font-mono text-3xl text-text mb-1.5">{p.v}</div>
+                <div className="font-mono text-[10.5px] tracking-[0.18em] text-muted">
+                  {p.k}
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      <section className="border-t border-border">
+        <div className="mx-auto max-w-[1400px] px-4 md:px-6 py-20">
+          <Reveal>
+            <div className="font-mono text-xs text-copper tracking-widest mb-3">
+              HOW IT WORKS
+            </div>
+            <h2 className="text-3xl mb-12">Three moves. Nothing hidden.</h2>
+          </Reveal>
+          <div className="grid md:grid-cols-3 gap-px bg-border border border-border">
+            {STEPS.map((s, i) => (
+              <Reveal key={s.n} delay={i * 0.1} className="h-full">
+                <div className="bg-bg p-8 h-full">
+                  <div className="font-mono text-xs text-copper mb-6">{s.n}</div>
+                  <h3 className="text-xl mb-3">{s.t}</h3>
+                  <p className="text-sm text-muted leading-relaxed">{s.b}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -110,20 +178,60 @@ expiry settles`}</pre>
         </div>
       </section>
 
-      <footer className="border-t border-border py-10">
-        <div className="mx-auto max-w-[1400px] px-4 md:px-6 flex flex-wrap gap-6 justify-between text-sm text-muted">
-          <div className="flex items-center gap-2">
-            <LogoMark size={16} className="text-muted" />
-            <span>HoodOptions · hoodoptions.xyz · Robinhood Chain</span>
-          </div>
-          <div className="flex gap-6 font-mono text-xs">
-            <Link href="/docs">Docs</Link>
-            <Link href="/trade">Trade</Link>
-            <Link href="/earn">Earn</Link>
-            <Link href="/api/markets">API</Link>
+      <section className="border-t border-border bg-surface/30">
+        <div className="mx-auto max-w-[1400px] px-4 md:px-6 py-20">
+          <div className="grid lg:grid-cols-[1fr_1.2fr] gap-12 items-start">
+            <Reveal>
+              <div>
+                <div className="font-mono text-xs text-copper tracking-widest mb-3">
+                  RISK ARCHITECTURE
+                </div>
+                <h2 className="text-3xl mb-4 max-w-sm">
+                  Sized like a pilot. Built like a venue.
+                </h2>
+                <p className="text-muted leading-relaxed max-w-sm mb-8">
+                  Every rule below is enforced by the contracts, not by a
+                  promise. Read them line by line on the explorer or in the
+                  open repository.
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <a
+                    href="https://github.com/BowyerApp/hoodoptions"
+                    target="_blank"
+                    rel="noreferrer"
+                    data-cursor
+                    className="border border-border px-4 py-2.5 text-sm text-text hover:border-copper/50 transition-colors"
+                  >
+                    Read the contracts ↗
+                  </a>
+                  <Link
+                    href="/docs/risk"
+                    data-cursor
+                    className="border border-copper/40 bg-copper-dim px-4 py-2.5 text-sm text-copper hover:bg-copper/20 transition-colors"
+                  >
+                    Risk model
+                  </Link>
+                </div>
+              </div>
+            </Reveal>
+            <div className="grid sm:grid-cols-2 gap-px bg-border border border-border">
+              {GUARANTEES.map(([t, b], i) => (
+                <Reveal key={t} delay={i * 0.08} className="h-full">
+                  <div className="bg-bg p-6 h-full">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="h-1 w-1 bg-copper" />
+                      <h3 className="font-mono text-[12.5px] tracking-wide text-text">
+                        {t}
+                      </h3>
+                    </div>
+                    <p className="text-sm text-muted leading-relaxed">{b}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
           </div>
         </div>
-      </footer>
+      </section>
     </div>
   );
 }

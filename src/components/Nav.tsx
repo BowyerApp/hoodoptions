@@ -106,6 +106,9 @@ export function Nav() {
               {l.label}
             </Link>
           ))}
+          <div className="pt-2 border-t border-border sm:hidden">
+            <WalletButton />
+          </div>
         </div>
       )}
     </header>

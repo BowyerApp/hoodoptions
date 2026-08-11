@@ -64,6 +64,21 @@ a {
   color: var(--text);
 }
 
+:focus-visible {
+  outline: 1px solid var(--copper);
+  outline-offset: 2px;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 .hairline {
   border-color: var(--border);
 }

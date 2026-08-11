@@ -15,6 +15,7 @@ import {
   usdgAbi,
 } from "@/lib/chain/contracts";
 import { robinhoodChain } from "@/lib/chain/wagmi";
+import { txErrorToast, txSuccessToast } from "@/lib/txToast";
 import type { Side } from "@/lib/protocol/pricing";
 
 type Props = {
@@ -122,7 +123,12 @@ export function OnchainTradeButton({
       });
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
       onStatus(
-        `Option live on Robinhood Chain · ${formatUnits(premium, 6)} USDG premium · tx ${receipt.transactionHash.slice(0, 10)}…`
+        `Option live on Robinhood Chain · ${formatUnits(premium, 6)} USDG premium`
+      );
+      txSuccessToast(
+        "Option opened",
+        receipt.transactionHash,
+        `${formatUnits(premium, 6)} USDG premium · max loss = premium`
       );
       await quote.refetch();
       await allowance.refetch();
@@ -130,6 +136,7 @@ export function OnchainTradeButton({
       const message =
         error instanceof Error ? error.message : "Transaction failed";
       onStatus(message.length > 140 ? `${message.slice(0, 137)}…` : message);
+      txErrorToast(message);
     } finally {
       setBusy(false);
       onBusy(false);

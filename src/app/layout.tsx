@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { Nav } from "@/components/Nav";
 import { Ticker } from "@/components/Ticker";
+import { Footer } from "@/components/Footer";
 import { AmbientBackground } from "@/components/AmbientBackground";
 
 const manrope = Manrope({
@@ -56,6 +57,7 @@ export default function RootLayout({
           <Nav />
           <Ticker />
           <main className="relative z-[1]">{children}</main>
+          <Footer />
         </Providers>
       </body>
     </html>

@@ -11,10 +11,11 @@ import {
   type Side,
 } from "@/lib/protocol/pricing";
 import { PayoffChart } from "@/components/PayoffChart";
-import { PriceChart } from "@/components/PriceChart";
+import { CandleChart } from "@/components/CandleChart";
+import { StrikeLadder } from "@/components/StrikeLadder";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { OnchainTradeButton } from "@/components/OnchainTradeButton";
-import { onchainMarketIds } from "@/lib/chain/contracts";
+import { isOnchainLive, onchainMarketIds } from "@/lib/chain/contracts";
 import { formatPct, formatUsd, useForge } from "@/store/forge";
 import clsx from "clsx";
 
@@ -80,21 +81,50 @@ function TradeInner() {
 
       <div className="grid lg:grid-cols-[1.4fr_1fr] gap-8">
         <div>
-          <div className="flex items-baseline gap-4 mb-2 flex-wrap">
+          <div className="flex items-baseline gap-4 mb-3 flex-wrap">
             <h1 className="text-3xl">{market.name}</h1>
-            <span className="font-mono text-2xl tick-flash">{formatUsd(spot)}</span>
-            <span className="font-mono text-xs text-muted uppercase">
-              {market.kind} · live venue
+            <span className="font-mono text-2xl tick-flash" key={spot}>
+              {formatUsd(spot)}
+            </span>
+            <span
+              className={clsx(
+                "font-mono text-sm",
+                (changes?.[symbol] ?? 0) >= 0 ? "text-up" : "text-down"
+              )}
+            >
+              {formatPct(changes?.[symbol] ?? 0)} 24H
+            </span>
+            <span className="ml-auto inline-flex items-center gap-1.5 font-mono text-[11px] text-muted uppercase">
+              <span
+                className={clsx(
+                  "h-1.5 w-1.5 rounded-full",
+                  isOnchainLive ? "bg-up" : "bg-copper"
+                )}
+              />
+              {isOnchainLive ? "CONTRACTS LIVE" : "MAINNET PENDING"} ·{" "}
+              {market.kind}
             </span>
           </div>
-          <div className="border border-border bg-surface/40 p-2 mb-6">
-            <PriceChart symbol={symbol} />
+          <div className="border border-border bg-surface/40 mb-6">
+            <CandleChart symbol={symbol} />
           </div>
-          <div>
-            <div className="font-mono text-xs text-muted tracking-widest mb-3">
-              LIVE TAPE
+          <div className="grid md:grid-cols-[320px_1fr] gap-6">
+            <StrikeLadder
+              spot={spot}
+              changePct={changes?.[symbol] ?? 0}
+              activeSide={side}
+              activeLeverage={leverage}
+              onPick={(s, l) => {
+                setSide(s);
+                setLeverage(l);
+              }}
+            />
+            <div>
+              <div className="font-mono text-xs text-muted tracking-widest mb-3">
+                LIVE TAPE
+              </div>
+              <ActivityFeed limit={10} />
             </div>
-            <ActivityFeed limit={8} />
           </div>
         </div>
 
