@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #0b0c0e;
-  --surface: #12141a;
-  --surface-2: #181b24;
-  --border: rgba(255, 255, 255, 0.06);
-  --border-strong: rgba(255, 255, 255, 0.12);
-  --text: #f2ede4;
-  --muted: rgba(242, 237, 228, 0.55);
-  --copper: #c4a574;
-  --copper-dim: rgba(196, 165, 116, 0.18);
+  --bg: #090a0d;
+  --surface: #101217;
+  --surface-2: #171a20;
+  --border: rgba(238, 241, 245, 0.075);
+  --border-strong: rgba(238, 241, 245, 0.14);
+  --text: #f1f3f5;
+  --muted: rgba(221, 226, 234, 0.54);
+  --copper: #a98a5b;
+  --copper-dim: rgba(169, 138, 91, 0.14);
   --up: #3ddc97;
   --down: #e85d4c;
-  --font-display: var(--font-newsreader);
+  --font-display: var(--font-manrope);
   --font-mono: var(--font-plex);
 }
 
@@ -28,7 +28,7 @@
   --color-copper-dim: var(--copper-dim);
   --color-up: var(--up);
   --color-down: var(--down);
-  --font-sans: var(--font-newsreader);
+  --font-sans: var(--font-manrope);
   --font-mono: var(--font-plex);
 }
 
@@ -44,7 +44,7 @@ body {
 }
 
 body {
-  font-family: var(--font-newsreader), "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-manrope), "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 

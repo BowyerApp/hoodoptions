@@ -9,29 +9,20 @@ export function LogoMark({
     <svg
       width={size}
       height={size}
-      viewBox="0 0 32 32"
+      viewBox="0 0 28 28"
       fill="none"
-      className={className}
-      aria-hidden
+      className={`text-current ${className}`}
+      aria-hidden="true"
     >
+      {/* Two-sided depth ladder: a compact, exchange-native mark. */}
       <path
-        d="M4 27 L28 27"
-        stroke="var(--copper, #c4a574)"
-        strokeOpacity="0.25"
-        strokeWidth="1.5"
+        d="M3 5H13V8H3V5ZM3 12.5H16V15.5H3V12.5ZM3 20H11V23H3V20Z"
+        fill="currentColor"
       />
       <path
-        d="M4 25 L12.5 15.5 L17 19.5 L27 8.5"
-        stroke="var(--copper, #c4a574)"
-        strokeWidth="2.6"
-        strokeLinecap="square"
-        strokeLinejoin="miter"
-      />
-      <path
-        d="M19.5 7.5 H27.5 V15.5"
-        stroke="var(--copper, #c4a574)"
-        strokeWidth="2.6"
-        strokeLinecap="square"
+        d="M16 5H25V8H16V5ZM13 12.5H25V15.5H13V12.5ZM18 20H25V23H18V20Z"
+        fill="currentColor"
+        fillOpacity="0.42"
       />
     </svg>
   );
@@ -39,8 +30,10 @@ export function LogoMark({
 
 export function Wordmark({ className = "" }: { className?: string }) {
   return (
-    <span className={`tracking-tight ${className}`}>
-      Hood<span className="text-copper">Options</span>
+    <span
+      className={`font-semibold uppercase leading-none tracking-[0.115em] ${className}`}
+    >
+      HoodOptions
     </span>
   );
 }

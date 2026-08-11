@@ -41,9 +41,9 @@ export function HomeHero() {
               }
               transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
             >
-              <LogoMark size={48} />
+              <LogoMark size={40} className="text-text" />
             </motion.div>
-            <Wordmark className="text-4xl md:text-5xl font-medium" />
+            <Wordmark className="text-[26px] md:text-[30px]" />
           </motion.div>
 
           <h1 className="text-4xl md:text-6xl leading-[1.1] tracking-tight max-w-2xl overflow-hidden">

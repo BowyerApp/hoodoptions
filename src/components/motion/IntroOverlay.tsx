@@ -74,35 +74,16 @@ export function IntroOverlay() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         >
-          <svg width={64} height={64} viewBox="0 0 32 32" fill="none">
-            <motion.path
-              d="M4 25 L12.5 15.5 L17 19.5 L27 8.5"
-              stroke="#c4a574"
-              strokeWidth="2.4"
-              strokeLinecap="square"
-              initial={{ pathLength: 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ duration: 0.9, ease: "easeOut", delay: 0.15 }}
-            />
-            <motion.path
-              d="M19.5 7.5 H27.5 V15.5"
-              stroke="#c4a574"
-              strokeWidth="2.4"
-              strokeLinecap="square"
-              initial={{ pathLength: 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ duration: 0.35, ease: "easeOut", delay: 0.95 }}
-            />
-          </svg>
+          <LogoMark size={54} className="text-text" />
         </motion.div>
 
         {/* wordmark letters rise */}
         <div className="mt-6 overflow-hidden">
-          <div className="flex text-[11vw] md:text-6xl lg:text-7xl font-medium tracking-[-0.03em] leading-none select-none">
+          <div className="flex text-[10vw] md:text-5xl lg:text-6xl font-semibold uppercase tracking-[0.09em] leading-none select-none">
             {WORD.split("").map((ch, i) => (
               <motion.span
                 key={i}
-                className={i >= 4 ? "text-copper" : "text-text"}
+                className="text-text"
                 initial={{ y: "110%" }}
                 animate={{ y: "0%" }}
                 transition={{

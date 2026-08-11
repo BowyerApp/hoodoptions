@@ -13,6 +13,8 @@ import {
 import { PayoffChart } from "@/components/PayoffChart";
 import { PriceChart } from "@/components/PriceChart";
 import { ActivityFeed } from "@/components/ActivityFeed";
+import { OnchainTradeButton } from "@/components/OnchainTradeButton";
+import { onchainMarketIds } from "@/lib/chain/contracts";
 import { formatPct, formatUsd, useForge } from "@/store/forge";
 import clsx from "clsx";
 
@@ -29,15 +31,12 @@ function TradeInner() {
   );
   const [sizeUsd, setSizeUsd] = useState(500);
   const [msg, setMsg] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
 
   const prices = useForge((s) => s.venue?.prices);
   const changes = useForge((s) => s.venue?.priceChanges);
-  const openTrade = useForge((s) => s.openTrade);
-  const ready = useForge((s) => s.ready);
-  const usdg = useForge((s) => s.user?.usdg ?? 0);
   const market = getMarket(symbol);
   const spot = prices?.[symbol] ?? market.basePrice;
+  const marketId = onchainMarketIds[symbol];
 
   const quote = useMemo(
     () =>
@@ -51,24 +50,6 @@ function TradeInner() {
       }),
     [spot, leverage, expiryHours, side, sizeUsd, market.iv]
   );
-
-  const onConfirm = async () => {
-    setBusy(true);
-    setMsg(null);
-    const res = await openTrade({
-      symbol,
-      side,
-      leverage,
-      expiryHours,
-      sizeUsd,
-    });
-    setBusy(false);
-    if (!res.ok) {
-      setMsg(res.error || "Failed");
-      return;
-    }
-    setMsg(`Opened ${symbol} ${side} · premium ${formatUsd(res.premium!)}`);
-  };
 
   return (
     <div className="mx-auto max-w-[1400px] px-4 md:px-6 py-6">
@@ -120,10 +101,7 @@ function TradeInner() {
         <div className="border border-border bg-surface p-5 h-fit sticky top-24">
           <div className="flex justify-between items-center mb-4">
             <div className="font-mono text-xs text-copper tracking-widest">
-              ORDER TICKET
-            </div>
-            <div className="font-mono text-xs text-muted">
-              Bal {formatUsd(usdg)}
+              ON-CHAIN TESTNET ORDER
             </div>
           </div>
 
@@ -206,7 +184,7 @@ function TradeInner() {
             className="space-y-2 border border-border bg-bg/50 p-4 mb-4"
           >
             <div className="flex justify-between">
-              <span className="text-muted text-sm">Premium / Max loss</span>
+              <span className="text-muted text-sm">Indicative premium / max loss</span>
               <span className="font-mono text-lg text-copper">
                 {formatUsd(quote.premium)}
               </span>
@@ -242,21 +220,27 @@ function TradeInner() {
             spot={spot}
           />
 
-          <button
-            data-cursor
-            disabled={busy || !ready}
-            onClick={onConfirm}
-            className="mt-4 w-full bg-copper text-bg py-3 font-medium tracking-wide hover:opacity-90 transition-opacity disabled:opacity-50"
-          >
-            {busy
-              ? "Submitting…"
-              : `Confirm · pay ${formatUsd(quote.premium)} USDG`}
-          </button>
+          {marketId === undefined ? (
+            <p className="mt-4 border border-border bg-surface-2 p-3 text-xs text-muted">
+              This private-market RWA has no verifiable testnet oracle yet and
+              is unavailable for on-chain trading.
+            </p>
+          ) : (
+            <OnchainTradeButton
+              marketId={marketId}
+              side={side}
+              leverage={leverage}
+              expiryHours={expiryHours}
+              sizeUsd={sizeUsd}
+              onStatus={setMsg}
+            onBusy={() => undefined}
+            />
+          )}
           {msg && (
             <p className="mt-3 text-sm font-mono text-muted">{msg}</p>
           )}
           <p className="mt-3 text-xs text-muted">
-            Live shared venue · premium settles to USDG vault · no liquidation
+            Contract quote is authoritative · testnet USDG only · no liquidation
           </p>
         </div>
       </div>

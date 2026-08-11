@@ -14,6 +14,14 @@ const nextConfig: NextConfig = {
       ...config.resolve.alias,
       accounts: false,
       tempo: false,
+      "porto": false,
+      "porto/internal": false,
+      "@base-org/account": false,
+      "@coinbase/wallet-sdk": false,
+      "@metamask/connect-evm": false,
+      "@safe-global/safe-apps-sdk": false,
+      "@safe-global/safe-apps-provider": false,
+      "@walletconnect/ethereum-provider": false,
     };
     return config;
   },

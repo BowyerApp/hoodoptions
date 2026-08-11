@@ -43,8 +43,8 @@ Traders pay premiums into a shared **USDG vault**. LPs own the vault and collect
 | | |
 |---|---|
 | **UP / DOWN options** | 2–10× payoff bands on NVDA, TSLA, SPCX, AMD, AAPL, META, AMZN, PLTR |
-| **Real market data** | Live quotes drive pricing and settlement, 30s refresh |
-| **Wallet-native** | Connect on Robinhood Chain (4663 / testnet 46630), account follows the wallet |
+| **Real market data** | Live public quotes feed the authenticated testnet oracle |
+| **Wallet-native** | Connect on Robinhood Chain Testnet (46630); transactions are wallet-signed |
 | **USDG vault** | ERC4626-style shares, live share price, APY from premium flow |
 | **Options board** | Deribit-style strike × expiry matrix |
 | **Points + leaderboard** | Every trade and deposit earns points — future incentive allocation |
@@ -53,7 +53,7 @@ Traders pay premiums into a shared **USDG vault**. LPs own the vault and collect
 
 ```text
 app/         Next.js 15 · Tailwind · Framer Motion · lightweight-charts
-wallets/     wagmi · viem — Robinhood Chain mainnet + testnet
+wallets/     wagmi · viem — Robinhood Chain testnet wallet transactions
 state/       shared venue engine, wallet-keyed accounts, live price feed
 contracts/   Foundry — HoodVault.sol · HoodOptionsEngine.sol · USDGMock.sol
 ```
@@ -88,15 +88,18 @@ forge script script/Deploy.s.sol --rpc-url robinhood_testnet \
   --private-key $DEPLOYER_KEY --broadcast
 ```
 
-## Status — honest by design
+Follow the full [testnet launch runbook](docs/TESTNET_LAUNCH.md) to configure
+the deployment addresses and protected price publisher.
+
+## Status — testnet-first by design
 
 | Layer | Today | Next |
 |---|---|---|
-| Venue (UI, vault, positions, points) | **Live** at hoodoptions.xyz | — |
-| Wallets | **Live** — Robinhood Chain via wagmi | Robinhood Wallet deep link |
-| Market data | **Live** — real quotes | Chainlink adapter |
-| Settlement | Server engine, auditable ledger | `HoodOptionsEngine.sol` on-chain |
-| Contracts | Written, deploy-ready | Testnet → audit → mainnet |
+| Venue (UI, wallet transaction flows) | **Testnet-ready** at hoodoptions.xyz | Testnet deployment activation |
+| Wallets | **Live** — Robinhood Chain Testnet via wagmi | Robinhood Wallet deep link |
+| Market data | **Live** — public quotes → protected oracle publisher | Independent oracle adapter |
+| Settlement | `HoodOptionsEngine.sol` after deployment | Audited oracle + mainnet engine |
+| Contracts | Tested, deploy-ready | Testnet → audit → mainnet |
 
 **Mainnet gate:** independent audit · Chainlink-compatible oracle · multisig + timelock on admin · canonical USDG.
 

@@ -7,10 +7,9 @@ interface IERC20 {
     function balanceOf(address who) external view returns (uint256);
 }
 
-/// @title HoodVault — USDG liquidity vault for HoodOptions
-/// @notice ERC4626-style share accounting. LPs deposit USDG and collectively
-///         act as the counterparty to every option written by the engine.
-///         Utilization is capped so LP withdrawals stay honest.
+/// @title HoodVault
+/// @notice Testnet USDG vault used as the counterparty to HoodOptions positions.
+/// @dev Uses 6-decimal assets and shares. Do not deploy on mainnet without an audit.
 contract HoodVault {
     IERC20 public immutable usdg;
     address public engine;
@@ -21,6 +20,7 @@ contract HoodVault {
     mapping(address => uint256) public sharesOf;
 
     uint256 public constant MAX_UTILIZATION_BPS = 8000; // 80%
+    uint256 private unlocked = 1;
 
     event Deposit(address indexed lp, uint256 assets, uint256 shares);
     event Withdraw(address indexed lp, uint256 assets, uint256 shares);
@@ -37,6 +37,13 @@ contract HoodVault {
     modifier onlyOwner() {
         require(msg.sender == owner, "owner only");
         _;
+    }
+
+    modifier nonReentrant() {
+        require(unlocked == 1, "reentrant");
+        unlocked = 2;
+        _;
+        unlocked = 1;
     }
 
     constructor(IERC20 _usdg) {
@@ -58,16 +65,18 @@ contract HoodVault {
         return (totalAssets() * 1e6) / totalShares;
     }
 
-    function deposit(uint256 assets) external returns (uint256 shares) {
+    function deposit(uint256 assets) external nonReentrant returns (uint256 shares) {
         require(assets > 0, "zero");
-        shares = totalShares == 0 ? assets : (assets * totalShares) / totalAssets();
+        uint256 assetsBefore = totalAssets();
+        shares = totalShares == 0 ? assets : (assets * totalShares) / assetsBefore;
+        require(shares > 0, "dust");
         require(usdg.transferFrom(msg.sender, address(this), assets), "transfer");
         totalShares += shares;
         sharesOf[msg.sender] += shares;
         emit Deposit(msg.sender, assets, shares);
     }
 
-    function withdraw(uint256 shares) external returns (uint256 assets) {
+    function withdraw(uint256 shares) external nonReentrant returns (uint256 assets) {
         require(shares > 0 && shares <= sharesOf[msg.sender], "shares");
         assets = (shares * totalAssets()) / totalShares;
         require(totalAssets() - assets >= reserved, "utilization");
@@ -79,6 +88,7 @@ contract HoodVault {
 
     /// @notice Engine locks collateral when an option is written.
     function reserve(uint256 amount) external onlyEngine {
+        require(amount > 0, "zero");
         require(
             (reserved + amount) * 10000 <= totalAssets() * MAX_UTILIZATION_BPS,
             "max utilization"
@@ -93,6 +103,7 @@ contract HoodVault {
     }
 
     function payOut(address to, uint256 amount) external onlyEngine {
+        require(totalAssets() >= amount, "insolvent");
         require(usdg.transfer(to, amount), "transfer");
         emit PayoutSent(to, amount);
     }

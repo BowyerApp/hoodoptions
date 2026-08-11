@@ -9,7 +9,7 @@ import {
   useSwitchChain,
 } from "wagmi";
 import { formatUnits } from "viem";
-import { robinhoodChain } from "@/lib/chain/wagmi";
+import { robinhoodTestnet } from "@/lib/chain/wagmi";
 import { useForge } from "@/store/forge";
 
 function short(addr: string) {
@@ -21,12 +21,12 @@ export function WalletButton() {
   const { connect, connectors, isPending } = useConnect();
   const { disconnect } = useDisconnect();
   const { switchChain } = useSwitchChain();
-  const { data: bal } = useBalance({ address, chainId: robinhoodChain.id });
+  const { data: bal } = useBalance({ address, chainId: robinhoodTestnet.id });
   const bindWallet = useForge((s) => s.bindWallet);
   const [open, setOpen] = useState(false);
   const bound = useRef<string | null>(null);
 
-  const onRobinhood = chainId === robinhoodChain.id || chainId === 46630;
+  const onRobinhood = chainId === robinhoodTestnet.id;
 
   // Bind the connected wallet to the venue account exactly once per address.
   useEffect(() => {
@@ -76,7 +76,7 @@ export function WalletButton() {
           <div className="flex justify-between text-xs font-mono mb-1">
             <span className="text-muted">Network</span>
             <span className={onRobinhood ? "text-up" : "text-down"}>
-              {onRobinhood ? "Robinhood Chain" : "Wrong network"}
+              {onRobinhood ? "Robinhood Testnet" : "Switch to testnet"}
             </span>
           </div>
           <div className="flex justify-between text-xs font-mono mb-3">
@@ -88,9 +88,9 @@ export function WalletButton() {
           {!onRobinhood && (
             <button
               className="w-full mb-2 rounded-sm bg-copper px-3 py-1.5 text-[12px] font-medium text-bg"
-              onClick={() => switchChain({ chainId: robinhoodChain.id })}
+              onClick={() => switchChain({ chainId: robinhoodTestnet.id })}
             >
-              Switch to Robinhood Chain
+              Switch to Robinhood Testnet
             </button>
           )}
           <button

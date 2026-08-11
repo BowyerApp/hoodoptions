@@ -113,7 +113,7 @@ expiry settles`}</pre>
       <footer className="border-t border-border py-10">
         <div className="mx-auto max-w-[1400px] px-4 md:px-6 flex flex-wrap gap-6 justify-between text-sm text-muted">
           <div className="flex items-center gap-2">
-            <LogoMark size={18} />
+            <LogoMark size={16} className="text-muted" />
             <span>HoodOptions · hoodoptions.xyz · Robinhood Chain</span>
           </div>
           <div className="flex gap-6 font-mono text-xs">

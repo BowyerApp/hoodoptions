@@ -20,7 +20,11 @@ contract USDGMock {
     mapping(address => uint256) public lastFaucet;
 
     function faucet() external {
-        require(block.timestamp - lastFaucet[msg.sender] > 1 days, "faucet: daily");
+        require(
+            lastFaucet[msg.sender] == 0 ||
+                block.timestamp - lastFaucet[msg.sender] >= 1 days,
+            "faucet: daily"
+        );
         lastFaucet[msg.sender] = block.timestamp;
         _mint(msg.sender, FAUCET_AMOUNT);
     }

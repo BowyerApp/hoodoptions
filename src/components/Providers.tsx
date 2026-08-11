@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import { WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { PrivyProvider } from "@privy-io/react-auth";
 import { ForgeCursor } from "./ForgeCursor";
 import { CommandPalette } from "./CommandPalette";
 import { IntroOverlay } from "./motion/IntroOverlay";
 import { wagmiConfig } from "@/lib/chain/wagmi";
 import { useForge } from "@/store/forge";
+import { isPrivyConfigured, privyAppId } from "@/lib/auth/privy";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const hydrate = useForge((s) => s.hydrate);
@@ -23,16 +25,36 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <IntroOverlay />
-        <ForgeCursor />
-        <CommandPalette />
-        {error && (
-          <div className="bg-down/20 text-down text-center text-xs font-mono py-1.5 border-b border-down/30">
-            Live connection issue: {error} — retrying…
-          </div>
+        {isPrivyConfigured && privyAppId ? (
+          <PrivyProvider appId={privyAppId}>
+            <AppShell error={error}>{children}</AppShell>
+          </PrivyProvider>
+        ) : (
+          <AppShell error={error}>{children}</AppShell>
         )}
-        {children}
       </QueryClientProvider>
     </WagmiProvider>
+  );
+}
+
+function AppShell({
+  children,
+  error,
+}: {
+  children: React.ReactNode;
+  error: string | null;
+}) {
+  return (
+    <>
+      <IntroOverlay />
+      <ForgeCursor />
+      <CommandPalette />
+      {error && (
+        <div className="bg-down/20 text-down text-center text-xs font-mono py-1.5 border-b border-down/30">
+          Live connection issue: {error} — retrying…
+        </div>
+      )}
+      {children}
+    </>
   );
 }

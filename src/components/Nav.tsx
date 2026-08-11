@@ -3,9 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { formatUsd, useForge } from "@/store/forge";
 import { LogoMark, Wordmark } from "@/components/Brand";
 import { WalletButton } from "@/components/WalletButton";
+import { TestnetFaucetButton } from "@/components/TestnetFaucetButton";
+import { HoodSignIn } from "@/components/HoodSignIn";
+import { WalletAccessControl } from "@/components/WalletAccessControl";
+import { isPrivyConfigured } from "@/lib/auth/privy";
 import clsx from "clsx";
 
 const LINKS = [
@@ -25,11 +28,6 @@ const MENU_ONLY = [
 export function Nav() {
   const path = usePathname();
   const [menu, setMenu] = useState(false);
-  const user = useForge((s) => s.user);
-  const ready = useForge((s) => s.ready);
-  const faucet = useForge((s) => s.faucet);
-
-  const usdg = user?.usdg ?? 0;
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-bg/85 backdrop-blur-xl">
@@ -40,8 +38,8 @@ export function Nav() {
             className="flex items-center gap-2.5 shrink-0 mr-8"
             data-cursor
           >
-            <LogoMark size={24} />
-            <Wordmark className="text-[17px] font-medium" />
+            <LogoMark size={21} className="text-text" />
+            <Wordmark className="text-[13px]" />
           </Link>
 
           <nav className="hidden lg:flex items-center gap-1">
@@ -72,33 +70,19 @@ export function Nav() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-up opacity-40" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-up" />
               </span>
-              LIVE
+              TESTNET
             </span>
-
-            <span className="hidden sm:inline font-mono text-[13px] tabular-nums">
-              <span className="text-muted">USDG&nbsp;</span>
-              {ready ? formatUsd(usdg) : "—"}
-            </span>
-
-            {usdg < 500 && (
-              <button
-                data-cursor
-                className="hidden sm:inline-flex items-center rounded-sm border border-border-strong px-3 py-1.5 text-[12px] font-mono text-copper hover:bg-copper-dim transition-colors"
-                onClick={async () => {
-                  const r = await faucet();
-                  alert(
-                    r.ok
-                      ? "Faucet +$2,500 USDG"
-                      : r.error || "Faucet unavailable"
-                  );
-                }}
-              >
-                Get USDG
-              </button>
-            )}
+            <TestnetFaucetButton />
 
             <span className="hidden sm:block">
-              <WalletButton />
+              {isPrivyConfigured ? (
+                <span className="flex items-center gap-2">
+                  <HoodSignIn />
+                  <WalletAccessControl />
+                </span>
+              ) : (
+                <WalletButton />
+              )}
             </span>
 
             <button
