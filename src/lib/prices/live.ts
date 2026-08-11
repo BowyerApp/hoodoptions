@@ -6,7 +6,12 @@ import { MARKETS } from "@/lib/chain/robinhood";
  * the simulated walk. Results cached for 30s per full refresh.
  */
 
-export type LiveQuote = { price: number; changePct: number };
+export type LiveQuote = {
+  price: number;
+  changePct: number;
+  /** Yahoo market session: REGULAR, PRE, POST, or CLOSED. */
+  marketState: string;
+};
 
 const CACHE_MS = 30_000;
 
@@ -40,6 +45,7 @@ async function fetchOne(symbol: string): Promise<LiveQuote | null> {
       price,
       changePct:
         Number.isFinite(prev) && prev > 0 ? ((price - prev) / prev) * 100 : 0,
+      marketState: String(meta?.marketState ?? "CLOSED"),
     };
   } catch {
     return null;

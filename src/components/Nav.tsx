@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { LogoMark, Wordmark } from "@/components/Brand";
 import { WalletButton } from "@/components/WalletButton";
-import { TestnetFaucetButton } from "@/components/TestnetFaucetButton";
 import { HoodSignIn } from "@/components/HoodSignIn";
 import { WalletAccessControl } from "@/components/WalletAccessControl";
 import { isPrivyConfigured } from "@/lib/auth/privy";
@@ -70,9 +69,8 @@ export function Nav() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-up opacity-40" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-up" />
               </span>
-              TESTNET
+              MAINNET PILOT
             </span>
-            <TestnetFaucetButton />
 
             <span className="hidden sm:block">
               {isPrivyConfigured ? (

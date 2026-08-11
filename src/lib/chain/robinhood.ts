@@ -1,18 +1,17 @@
 export const ROBINHOOD_CHAIN = {
-  id: 46630,
-  name: "Robinhood Chain Testnet",
-  mainnetId: 4663,
-  rpcUrl: "https://rpc.testnet.chain.robinhood.com",
-  explorer: "https://explorer.testnet.chain.robinhood.com",
+  id: 4663,
+  name: "Robinhood Chain",
+  rpcUrl: "https://rpc.mainnet.chain.robinhood.com",
+  explorer: "https://robinhoodchain.blockscout.com",
   nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
 } as const;
 
 export const USDG = {
   symbol: "USDG",
-  name: "USDG",
+  name: "Global Dollar",
   decimals: 6,
-  /** Placeholder registry — demo ledger uses symbol identity */
-  address: "0xUSDG000000000000000000000000000000000001",
+  /** Canonical Paxos-issued USDG on Robinhood Chain mainnet. */
+  address: "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
 } as const;
 
 export type Market = {

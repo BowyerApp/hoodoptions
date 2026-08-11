@@ -3,12 +3,12 @@
 import { formatUnits } from "viem";
 import { useAccount, useReadContract } from "wagmi";
 import {
-  hoodTestnetContracts,
-  isTestnetLive,
+  hoodContracts,
+  isOnchainLive,
   usdgAbi,
   vaultAbi,
 } from "@/lib/chain/contracts";
-import { robinhoodTestnet } from "@/lib/chain/wagmi";
+import { robinhoodChain } from "@/lib/chain/wagmi";
 
 function usd(value: bigint | undefined) {
   return value === undefined
@@ -22,42 +22,56 @@ function usd(value: bigint | undefined) {
 
 export function OnchainVaultStats() {
   const { address } = useAccount();
-  const enabled = isTestnetLive;
+  const enabled = isOnchainLive;
   const balance = useReadContract({
-    address: hoodTestnetContracts.usdg,
+    address: hoodContracts.usdg,
     abi: usdgAbi,
     functionName: "balanceOf",
     args: address ? [address] : undefined,
-    chainId: robinhoodTestnet.id,
+    chainId: robinhoodChain.id,
     query: { enabled: Boolean(enabled && address) },
   });
   const assets = useReadContract({
-    address: hoodTestnetContracts.vault,
+    address: hoodContracts.vault,
     abi: vaultAbi,
     functionName: "totalAssets",
-    chainId: robinhoodTestnet.id,
+    chainId: robinhoodChain.id,
     query: { enabled },
   });
   const shares = useReadContract({
-    address: hoodTestnetContracts.vault,
+    address: hoodContracts.vault,
     abi: vaultAbi,
     functionName: "sharesOf",
     args: address ? [address] : undefined,
-    chainId: robinhoodTestnet.id,
+    chainId: robinhoodChain.id,
     query: { enabled: Boolean(enabled && address) },
   });
   const price = useReadContract({
-    address: hoodTestnetContracts.vault,
+    address: hoodContracts.vault,
     abi: vaultAbi,
     functionName: "sharePrice",
-    chainId: robinhoodTestnet.id,
+    chainId: robinhoodChain.id,
+    query: { enabled },
+  });
+  const cap = useReadContract({
+    address: hoodContracts.vault,
+    abi: vaultAbi,
+    functionName: "depositCap",
+    chainId: robinhoodChain.id,
+    query: { enabled },
+  });
+  const reserved = useReadContract({
+    address: hoodContracts.vault,
+    abi: vaultAbi,
+    functionName: "reserved",
+    chainId: robinhoodChain.id,
     query: { enabled },
   });
 
   if (!enabled) {
     return (
       <p className="mb-6 border border-copper/30 bg-copper-dim p-3 text-xs text-muted">
-        On-chain testnet actions are disabled until the deployment addresses
+        On-chain actions are disabled until the mainnet deployment addresses
         are configured.
       </p>
     );
@@ -68,15 +82,34 @@ export function OnchainVaultStats() {
       ? (shares.data * price.data) / 1_000_000n
       : undefined;
 
+  const capFill =
+    assets.data !== undefined && cap.data !== undefined && cap.data > 0n
+      ? Number((assets.data * 10_000n) / cap.data) / 100
+      : undefined;
+
   return (
-    <div className="grid grid-cols-2 gap-6 mb-8">
-      <Stat label="On-chain vault TVL" value={usd(assets.data)} />
-      <Stat label="Your testnet USDG" value={usd(balance.data)} accent />
-      <Stat label="Your LP equity" value={usd(equity)} />
-      <Stat
-        label="Share price"
-        value={price.data ? Number(formatUnits(price.data, 6)).toFixed(4) : "—"}
-      />
+    <div className="mb-8">
+      <div className="grid grid-cols-2 gap-6 mb-5">
+        <Stat label="Pool TVL (on-chain)" value={usd(assets.data)} />
+        <Stat label="Your USDG" value={usd(balance.data)} accent />
+        <Stat label="Your LP equity" value={usd(equity)} />
+        <Stat
+          label="Share price"
+          value={price.data ? Number(formatUnits(price.data, 6)).toFixed(4) : "—"}
+        />
+      </div>
+      <div className="border border-border p-3">
+        <div className="flex justify-between font-mono text-[11px] text-muted mb-2">
+          <span>PILOT POOL CAP {usd(cap.data)}</span>
+          <span>RESERVED {usd(reserved.data)}</span>
+        </div>
+        <div className="h-1 bg-surface-2">
+          <div
+            className="h-1 bg-copper transition-all"
+            style={{ width: `${Math.min(100, capFill ?? 0)}%` }}
+          />
+        </div>
+      </div>
     </div>
   );
 }

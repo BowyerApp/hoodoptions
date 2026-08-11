@@ -9,7 +9,7 @@ import {
   useSwitchChain,
 } from "wagmi";
 import { formatUnits } from "viem";
-import { robinhoodTestnet } from "@/lib/chain/wagmi";
+import { robinhoodChain } from "@/lib/chain/wagmi";
 import { useForge } from "@/store/forge";
 
 function short(addr: string) {
@@ -21,12 +21,12 @@ export function WalletButton() {
   const { connect, connectors, isPending } = useConnect();
   const { disconnect } = useDisconnect();
   const { switchChain } = useSwitchChain();
-  const { data: bal } = useBalance({ address, chainId: robinhoodTestnet.id });
+  const { data: bal } = useBalance({ address, chainId: robinhoodChain.id });
   const bindWallet = useForge((s) => s.bindWallet);
   const [open, setOpen] = useState(false);
   const bound = useRef<string | null>(null);
 
-  const onRobinhood = chainId === robinhoodTestnet.id;
+  const onRobinhood = chainId === robinhoodChain.id;
 
   // Bind the connected wallet to the venue account exactly once per address.
   useEffect(() => {
@@ -76,21 +76,23 @@ export function WalletButton() {
           <div className="flex justify-between text-xs font-mono mb-1">
             <span className="text-muted">Network</span>
             <span className={onRobinhood ? "text-up" : "text-down"}>
-              {onRobinhood ? "Robinhood Testnet" : "Switch to testnet"}
+              {onRobinhood ? "Robinhood Chain" : "Wrong network"}
             </span>
           </div>
           <div className="flex justify-between text-xs font-mono mb-3">
             <span className="text-muted">ETH</span>
             <span>
-              {bal ? Number(formatUnits(bal.value, bal.decimals)).toFixed(5) : "0.00000"}
+              {bal
+                ? Number(formatUnits(bal.value, bal.decimals)).toFixed(5)
+                : "0.00000"}
             </span>
           </div>
           {!onRobinhood && (
             <button
               className="w-full mb-2 rounded-sm bg-copper px-3 py-1.5 text-[12px] font-medium text-bg"
-              onClick={() => switchChain({ chainId: robinhoodTestnet.id })}
+              onClick={() => switchChain({ chainId: robinhoodChain.id })}
             >
-              Switch to Robinhood Testnet
+              Switch to Robinhood Chain
             </button>
           )}
           <button

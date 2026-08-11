@@ -9,12 +9,12 @@ import {
   useWriteContract,
 } from "wagmi";
 import {
-  hoodTestnetContracts,
-  isTestnetLive,
+  hoodContracts,
+  isOnchainLive,
   usdgAbi,
   vaultAbi,
 } from "@/lib/chain/contracts";
-import { robinhoodTestnet } from "@/lib/chain/wagmi";
+import { robinhoodChain } from "@/lib/chain/wagmi";
 
 type Props = {
   mode: "deposit" | "withdraw";
@@ -24,7 +24,7 @@ type Props = {
 
 export function OnchainVaultAction({ mode, amount, onStatus }: Props) {
   const { address, chainId, isConnected } = useAccount();
-  const client = usePublicClient({ chainId: robinhoodTestnet.id });
+  const client = usePublicClient({ chainId: robinhoodChain.id });
   const { writeContractAsync } = useWriteContract();
   const [busy, setBusy] = useState(false);
   const assets = useMemo(() => {
@@ -36,61 +36,74 @@ export function OnchainVaultAction({ mode, amount, onStatus }: Props) {
   }, [amount]);
 
   const allowance = useReadContract({
-    address: hoodTestnetContracts.usdg,
+    address: hoodContracts.usdg,
     abi: usdgAbi,
     functionName: "allowance",
-    args: address && hoodTestnetContracts.vault
-      ? [address, hoodTestnetContracts.vault]
-      : undefined,
-    chainId: robinhoodTestnet.id,
-    query: { enabled: Boolean(address && isTestnetLive) },
+    args:
+      address && hoodContracts.vault ? [address, hoodContracts.vault] : undefined,
+    chainId: robinhoodChain.id,
+    query: { enabled: Boolean(address && isOnchainLive) },
   });
   const totalAssets = useReadContract({
-    address: hoodTestnetContracts.vault,
+    address: hoodContracts.vault,
     abi: vaultAbi,
     functionName: "totalAssets",
-    chainId: robinhoodTestnet.id,
-    query: { enabled: isTestnetLive },
+    chainId: robinhoodChain.id,
+    query: { enabled: isOnchainLive },
   });
   const totalShares = useReadContract({
-    address: hoodTestnetContracts.vault,
+    address: hoodContracts.vault,
     abi: vaultAbi,
     functionName: "totalShares",
-    chainId: robinhoodTestnet.id,
-    query: { enabled: isTestnetLive },
+    chainId: robinhoodChain.id,
+    query: { enabled: isOnchainLive },
+  });
+  const depositCap = useReadContract({
+    address: hoodContracts.vault,
+    abi: vaultAbi,
+    functionName: "depositCap",
+    chainId: robinhoodChain.id,
+    query: { enabled: isOnchainLive },
   });
 
   const submit = async () => {
-    if (!isTestnetLive) return onStatus("Testnet contracts are not configured yet.");
+    if (!isOnchainLive) return onStatus("Contracts are not deployed yet.");
     if (!isConnected || !address) return onStatus("Connect a wallet first.");
-    if (chainId !== robinhoodTestnet.id)
-      return onStatus("Switch to Robinhood Chain Testnet.");
+    if (chainId !== robinhoodChain.id)
+      return onStatus("Switch to Robinhood Chain.");
     if (!client || assets === 0n) return onStatus("Enter a valid USDG amount.");
 
     setBusy(true);
     try {
       if (mode === "deposit") {
+        const cap = depositCap.data ?? 0n;
+        const tvl = totalAssets.data ?? 0n;
+        if (cap > 0n && tvl + assets > cap) {
+          return onStatus(
+            "The pilot pool cap would be exceeded — try a smaller amount."
+          );
+        }
         if ((allowance.data ?? 0n) < assets) {
-          onStatus("Approve testnet USDG in your wallet…");
+          onStatus("Approve USDG in your wallet…");
           const approval = await writeContractAsync({
-            address: hoodTestnetContracts.usdg!,
+            address: hoodContracts.usdg,
             abi: usdgAbi,
             functionName: "approve",
-            args: [hoodTestnetContracts.vault!, assets],
-            chainId: robinhoodTestnet.id,
+            args: [hoodContracts.vault!, assets],
+            chainId: robinhoodChain.id,
           });
           await client.waitForTransactionReceipt({ hash: approval });
         }
         onStatus("Confirm vault deposit…");
         const hash = await writeContractAsync({
-          address: hoodTestnetContracts.vault!,
+          address: hoodContracts.vault!,
           abi: vaultAbi,
           functionName: "deposit",
           args: [assets],
-          chainId: robinhoodTestnet.id,
+          chainId: robinhoodChain.id,
         });
         await client.waitForTransactionReceipt({ hash });
-        onStatus("Testnet USDG deposited on-chain.");
+        onStatus("USDG deposited. You are now earning premiums.");
       } else {
         const vaultAssets = totalAssets.data ?? 0n;
         const shares = totalShares.data ?? 0n;
@@ -100,20 +113,21 @@ export function OnchainVaultAction({ mode, amount, onStatus }: Props) {
         if (sharesToWithdraw === 0n) return onStatus("Amount is too small.");
         onStatus("Confirm vault withdrawal…");
         const hash = await writeContractAsync({
-          address: hoodTestnetContracts.vault!,
+          address: hoodContracts.vault!,
           abi: vaultAbi,
           functionName: "withdraw",
           args: [sharesToWithdraw],
-          chainId: robinhoodTestnet.id,
+          chainId: robinhoodChain.id,
         });
         await client.waitForTransactionReceipt({ hash });
-        onStatus("Testnet USDG withdrawn on-chain.");
+        onStatus("USDG withdrawn to your wallet.");
       }
       await allowance.refetch();
       await totalAssets.refetch();
       await totalShares.refetch();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Transaction failed";
+      const message =
+        error instanceof Error ? error.message : "Transaction failed";
       onStatus(message.length > 140 ? `${message.slice(0, 137)}…` : message);
     } finally {
       setBusy(false);
@@ -123,17 +137,17 @@ export function OnchainVaultAction({ mode, amount, onStatus }: Props) {
   return (
     <button
       data-cursor
-      disabled={!isTestnetLive || busy || assets === 0n}
+      disabled={!isOnchainLive || busy || assets === 0n}
       onClick={submit}
       className="w-full bg-copper py-3 font-medium text-bg transition-opacity hover:opacity-90 disabled:opacity-50"
     >
       {busy
         ? "Confirming on-chain…"
-        : !isTestnetLive
-          ? "Testnet deployment pending"
+        : !isOnchainLive
+          ? "Mainnet deployment pending"
           : mode === "deposit"
-            ? "Deposit testnet USDG on-chain"
-            : "Withdraw testnet USDG on-chain"}
+            ? "Deposit USDG"
+            : "Withdraw USDG"}
     </button>
   );
 }

@@ -1,27 +1,45 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {USDGMock} from "../src/USDGMock.sol";
 import {HoodVault, IERC20} from "../src/HoodVault.sol";
 import {HoodOptionsEngine} from "../src/HoodOptionsEngine.sol";
 import {Script, console2} from "forge-std/Script.sol";
 
-/// Deploy order: USDG (testnet only) -> Vault -> Engine -> seed liquidity +
-/// public markets. The broadcaster is also the temporary testnet oracle.
+/// Mainnet pilot deploy: Vault (capped) -> Engine -> markets.
+///
+/// Required env:
+///   ORACLE_ADDRESS   price publisher wallet (server-side key)
+/// Optional env:
+///   USDG_ADDRESS     defaults to canonical USDG on Robinhood Chain
+///   FEE_SINK         defaults to the deployer
+///   DEPOSIT_CAP      6-decimal USDG units, defaults to 5,000 USDG
+///
 /// Usage:
-///   forge script script/Deploy.s.sol --rpc-url robinhood_testnet \
+///   forge script script/Deploy.s.sol \
+///     --rpc-url https://rpc.mainnet.chain.robinhood.com \
 ///     --private-key $DEPLOYER_KEY --broadcast
+///
+/// The oracle must post prices for every market before quoting/opening works;
+/// the app's protected /api/oracle/publish route does this automatically.
 contract Deploy is Script {
+    // Canonical Global Dollar (USDG, 6 decimals) on Robinhood Chain mainnet.
+    address internal constant CANONICAL_USDG =
+        0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168;
+
     function run() external {
+        address usdg = vm.envOr("USDG_ADDRESS", CANONICAL_USDG);
+        address oracle = vm.envAddress("ORACLE_ADDRESS");
+        address feeSink = vm.envOr("FEE_SINK", msg.sender);
+        uint256 depositCap = vm.envOr("DEPOSIT_CAP", uint256(5_000e6));
+
         vm.startBroadcast();
 
-        USDGMock usdg = new USDGMock();
-        HoodVault vault = new HoodVault(IERC20(address(usdg)));
+        HoodVault vault = new HoodVault(IERC20(usdg), depositCap);
         HoodOptionsEngine engine = new HoodOptionsEngine(
-            IERC20(address(usdg)),
+            IERC20(usdg),
             vault,
-            msg.sender, // oracle = deployer until Chainlink adapter is wired
-            msg.sender // fee sink
+            oracle,
+            feeSink
         );
         vault.setEngine(address(engine));
 
@@ -33,26 +51,12 @@ contract Deploy is Script {
         engine.listMarket("AMZN");
         engine.listMarket("PLTR");
 
-        // A usable testnet needs initial LP collateral. USDGMock limits this
-        // to 10,000 USDG/day per wallet, deliberately.
-        usdg.faucet();
-        usdg.approve(address(vault), type(uint256).max);
-        vault.deposit(10_000e6);
-
-        // Initial testnet spots. The protected oracle publisher replaces these
-        // with live public-market prices immediately after deployment.
-        engine.postPrice(0, 200e8); // NVDA
-        engine.postPrice(1, 350e8); // TSLA
-        engine.postPrice(2, 150e8); // AMD
-        engine.postPrice(3, 220e8); // AAPL
-        engine.postPrice(4, 600e8); // META
-        engine.postPrice(5, 200e8); // AMZN
-        engine.postPrice(6, 100e8); // PLTR
-
         vm.stopBroadcast();
 
-        console2.log("NEXT_PUBLIC_TESTNET_USDG_ADDRESS=", address(usdg));
-        console2.log("NEXT_PUBLIC_TESTNET_VAULT_ADDRESS=", address(vault));
-        console2.log("NEXT_PUBLIC_TESTNET_ENGINE_ADDRESS=", address(engine));
+        console2.log("NEXT_PUBLIC_USDG_ADDRESS=", usdg);
+        console2.log("NEXT_PUBLIC_VAULT_ADDRESS=", address(vault));
+        console2.log("NEXT_PUBLIC_ENGINE_ADDRESS=", address(engine));
+        console2.log("oracle:", oracle);
+        console2.log("deposit cap (USDG 6dp):", depositCap);
     }
 }

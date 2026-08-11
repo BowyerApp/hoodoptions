@@ -4,10 +4,15 @@ pragma solidity ^0.8.24;
 import {HoodVault, IERC20} from "./HoodVault.sol";
 
 /// @title HoodOptionsEngine
-/// @notice Defined-risk, European testnet options on oracle-priced markets.
-/// @dev Quotes are calculated inside this contract. A trader cannot select an
-///      arbitrary strike, premium, or settlement price. The oracle is a
-///      testnet operator; replace it with an audited price adapter for mainnet.
+/// @notice Defined-risk, European, cash-settled options on oracle-priced
+///         markets. Premiums, strikes, and payouts are computed in-contract;
+///         a trader cannot select an arbitrary strike, premium, or settlement
+///         price.
+/// @dev Mainnet pilot trust model: a protocol-operated oracle posts public
+///      equity prices. Risk is bounded by the vault deposit cap, per-trade
+///      size bounds, 80% max utilization, and a price-freshness requirement
+///      for opening. Settlement is permissionless once the oracle has posted
+///      a price at or after expiry.
 contract HoodOptionsEngine {
     enum Side {
         UP,
@@ -41,11 +46,14 @@ contract HoodOptionsEngine {
 
     Market[] public markets;
     OptionPosition[] public positions;
+    mapping(address => uint256[]) private traderPositions;
 
-    uint256 public constant MIN_SIZE = 10e6; // 10 USDG
-    uint256 public constant MAX_SIZE = 50_000e6; // 50,000 USDG
+    uint128 public minSize = 10e6; // 10 USDG
+    uint128 public maxSize = 500e6; // 500 USDG — pilot bound, owner-tunable
+    uint64 public constant MAX_PRICE_AGE = 45 minutes; // freshness gate for opening
     uint256 public constant FEE_BPS = 300; // 3% of payout to protocol
     address public feeSink;
+    bool public paused; // blocks new opens, never settlement
     uint256 private unlocked = 1;
 
     event MarketListed(uint16 indexed id, bytes32 symbol);
@@ -61,6 +69,8 @@ contract HoodOptionsEngine {
     );
     event Settled(uint256 indexed id, bool won, uint256 payout);
     event PricePosted(uint16 indexed marketId, uint128 price, uint64 timestamp);
+    event SizeBoundsSet(uint128 minSize, uint128 maxSize);
+    event PausedSet(bool paused);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "owner only");
@@ -110,8 +120,20 @@ contract HoodOptionsEngine {
         markets[marketId].active = active;
     }
 
-    /// @notice Posts an 8-decimal spot price. The testnet oracle must update
-    ///         after a position expires before it can be settled.
+    function setSizeBounds(uint128 _minSize, uint128 _maxSize) external onlyOwner {
+        require(_minSize > 0 && _minSize <= _maxSize, "bounds");
+        minSize = _minSize;
+        maxSize = _maxSize;
+        emit SizeBoundsSet(_minSize, _maxSize);
+    }
+
+    function setPaused(bool _paused) external onlyOwner {
+        paused = _paused;
+        emit PausedSet(_paused);
+    }
+
+    /// @notice Posts an 8-decimal spot price. Settlement of a position requires
+    ///         a price posted at or after its expiry.
     function postPrice(uint16 marketId, uint128 price) external onlyOracle {
         require(marketId < markets.length, "market");
         require(price > 0, "price");
@@ -129,10 +151,14 @@ contract HoodOptionsEngine {
         require(marketId < markets.length, "market");
         Market memory market = markets[marketId];
         require(market.active && market.spot > 0, "stale market");
+        require(
+            block.timestamp <= uint256(market.updatedAt) + MAX_PRICE_AGE,
+            "stale price"
+        );
         require(leverage >= 2 && leverage <= 10, "leverage");
-        require(size >= MIN_SIZE && size <= MAX_SIZE, "size");
+        require(size >= minSize && size <= maxSize, "size");
 
-        // 20–36% premium by leverage: deterministic, transparent testnet pricing.
+        // 20–36% premium by leverage: deterministic, transparent pricing.
         premium = uint128((uint256(size) * (1600 + uint256(leverage) * 200)) / 10_000);
         // 2.8x–9.2x premium payout gives the advertised defined-risk payoff band.
         maxPayout = uint128((uint256(premium) * (120 + uint256(leverage) * 80)) / 100);
@@ -147,6 +173,7 @@ contract HoodOptionsEngine {
         uint64 expiresAt,
         uint128 size
     ) external nonReentrant returns (uint256 id) {
+        require(!paused, "paused");
         require(expiresAt > block.timestamp + 5 minutes, "short expiry");
         require(expiresAt <= block.timestamp + 8 days, "long expiry");
         (uint128 premium, uint128 upStrike, uint128 maxPayout) = quote(marketId, leverage, size);
@@ -174,9 +201,12 @@ contract HoodOptionsEngine {
                 settled: false
             })
         );
+        traderPositions[msg.sender].push(id);
         emit Opened(id, msg.sender, marketId, side, leverage, premium, strike, expiresAt);
     }
 
+    /// @notice Permissionless. Anyone may settle an expired position once the
+    ///         oracle has posted a price at or after expiry.
     function settle(uint256 id) external nonReentrant {
         OptionPosition storage p = positions[id];
         require(!p.settled, "settled");
@@ -201,5 +231,14 @@ contract HoodOptionsEngine {
 
     function positionCount() external view returns (uint256) {
         return positions.length;
+    }
+
+    /// @notice Position ids ever opened by a trader (client reads details via positions()).
+    function positionIdsOf(address trader) external view returns (uint256[] memory) {
+        return traderPositions[trader];
+    }
+
+    function marketCount() external view returns (uint256) {
+        return markets.length;
     }
 }

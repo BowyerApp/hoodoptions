@@ -8,8 +8,10 @@ interface IERC20 {
 }
 
 /// @title HoodVault
-/// @notice Testnet USDG vault used as the counterparty to HoodOptions positions.
-/// @dev Uses 6-decimal assets and shares. Do not deploy on mainnet without an audit.
+/// @notice Capped USDG vault that acts as counterparty to HoodOptions positions.
+/// @dev Mainnet pilot configuration: hard deposit cap, owner pause for new
+///      inflows/underwriting, withdrawals never pausable. Assets and shares
+///      are 6 decimals (canonical USDG).
 contract HoodVault {
     IERC20 public immutable usdg;
     address public engine;
@@ -17,6 +19,8 @@ contract HoodVault {
 
     uint256 public totalShares;
     uint256 public reserved; // collateral locked against open options
+    uint256 public depositCap; // hard ceiling on totalAssets after a deposit
+    bool public paused; // blocks deposits + new reserves, never withdrawals
     mapping(address => uint256) public sharesOf;
 
     uint256 public constant MAX_UTILIZATION_BPS = 8000; // 80%
@@ -28,6 +32,8 @@ contract HoodVault {
     event Released(uint256 amount);
     event PayoutSent(address indexed to, uint256 amount);
     event PremiumReceived(uint256 amount);
+    event DepositCapSet(uint256 cap);
+    event PausedSet(bool paused);
 
     modifier onlyEngine() {
         require(msg.sender == engine, "engine only");
@@ -46,14 +52,25 @@ contract HoodVault {
         unlocked = 1;
     }
 
-    constructor(IERC20 _usdg) {
+    constructor(IERC20 _usdg, uint256 _depositCap) {
         usdg = _usdg;
+        depositCap = _depositCap;
         owner = msg.sender;
     }
 
     function setEngine(address _engine) external onlyOwner {
         require(engine == address(0), "engine set");
         engine = _engine;
+    }
+
+    function setDepositCap(uint256 cap) external onlyOwner {
+        depositCap = cap;
+        emit DepositCapSet(cap);
+    }
+
+    function setPaused(bool _paused) external onlyOwner {
+        paused = _paused;
+        emit PausedSet(_paused);
     }
 
     function totalAssets() public view returns (uint256) {
@@ -66,8 +83,10 @@ contract HoodVault {
     }
 
     function deposit(uint256 assets) external nonReentrant returns (uint256 shares) {
+        require(!paused, "paused");
         require(assets > 0, "zero");
         uint256 assetsBefore = totalAssets();
+        require(assetsBefore + assets <= depositCap, "cap");
         shares = totalShares == 0 ? assets : (assets * totalShares) / assetsBefore;
         require(shares > 0, "dust");
         require(usdg.transferFrom(msg.sender, address(this), assets), "transfer");
@@ -88,6 +107,7 @@ contract HoodVault {
 
     /// @notice Engine locks collateral when an option is written.
     function reserve(uint256 amount) external onlyEngine {
+        require(!paused, "paused");
         require(amount > 0, "zero");
         require(
             (reserved + amount) * 10000 <= totalAssets() * MAX_UTILIZATION_BPS,

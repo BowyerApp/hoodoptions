@@ -1,0 +1,22 @@
+name: Oracle price publisher
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Post prices to Robinhood Chain
+        run: |
+          code=$(curl -sS -o /tmp/resp.json -w "%{http_code}" --max-time 60 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://hoodoptions.xyz/api/oracle/publish")
+          cat /tmp/resp.json
+          if [ "$code" = "200" ]; then exit 0; fi
+          # 503 means contracts/oracle not configured yet — don't page on it.
+          if [ "$code" = "503" ]; then echo "oracle not live yet"; exit 0; fi
+          echo "publisher failed with HTTP $code"; exit 1

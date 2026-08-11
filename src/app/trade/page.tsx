@@ -101,7 +101,7 @@ function TradeInner() {
         <div className="border border-border bg-surface p-5 h-fit sticky top-24">
           <div className="flex justify-between items-center mb-4">
             <div className="font-mono text-xs text-copper tracking-widest">
-              ON-CHAIN TESTNET ORDER
+              ON-CHAIN ORDER · ROBINHOOD CHAIN
             </div>
           </div>
 
@@ -222,7 +222,7 @@ function TradeInner() {
 
           {marketId === undefined ? (
             <p className="mt-4 border border-border bg-surface-2 p-3 text-xs text-muted">
-              This private-market RWA has no verifiable testnet oracle yet and
+              This private-market RWA has no verifiable price oracle yet and
               is unavailable for on-chain trading.
             </p>
           ) : (
@@ -240,7 +240,8 @@ function TradeInner() {
             <p className="mt-3 text-sm font-mono text-muted">{msg}</p>
           )}
           <p className="mt-3 text-xs text-muted">
-            Contract quote is authoritative · testnet USDG only · no liquidation
+            Contract quote is authoritative · USDG-settled · max loss = premium
+            · pilot size caps apply
           </p>
         </div>
       </div>

@@ -16,7 +16,7 @@ export default function EarnPage() {
   return (
     <div className="mx-auto max-w-[1400px] px-4 md:px-6 py-10">
       <div className="font-mono text-xs text-copper tracking-widest mb-3">
-        USDG LIQUIDITY VAULT · ROBINHOOD TESTNET
+        USDG LIQUIDITY VAULT · ROBINHOOD CHAIN
       </div>
       <h1 className="text-4xl mb-2">Earn as the house</h1>
       <p className="text-muted max-w-xl mb-10">
@@ -68,20 +68,21 @@ export default function EarnPage() {
           <OnchainVaultAction mode={mode} amount={amount} onStatus={setMsg} />
           {msg && <p className="mt-3 text-sm font-mono text-muted">{msg}</p>}
           <p className="mt-4 text-xs text-muted">
-            Contract state is authoritative. Testnet USDG only.
+            Contract state is authoritative. Real USDG — the pilot pool is
+            deliberately capped while the venue proves itself.
           </p>
         </div>
 
         <div>
           <div className="border border-border bg-surface p-6">
             <div className="font-mono text-xs text-copper tracking-widest mb-4">
-              TESTNET VAULT MODEL
+              HOW THE VAULT WORKS
             </div>
             <ol className="space-y-4 text-sm text-muted">
-              <li><span className="text-text">01</span> Connect on Robinhood Chain Testnet.</li>
-              <li><span className="text-text">02</span> Claim testnet USDG from the token faucet.</li>
-              <li><span className="text-text">03</span> Approve and deposit USDG; receive vault shares.</li>
-              <li><span className="text-text">04</span> Withdrawable liquidity is enforced by the vault&apos;s 80% utilization cap.</li>
+              <li><span className="text-text">01</span> Connect on Robinhood Chain with USDG in your wallet.</li>
+              <li><span className="text-text">02</span> Approve and deposit USDG; receive vault shares.</li>
+              <li><span className="text-text">03</span> Every trader premium flows into the vault; every payout is collateralized before a trade opens.</li>
+              <li><span className="text-text">04</span> Withdraw any time capital is free — the 80% utilization cap always keeps an exit lane open.</li>
             </ol>
           </div>
         </div>
